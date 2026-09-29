@@ -2,6 +2,13 @@
 
 Installe [unreal-mcp](https://github.com/chongdashu/unreal-mcp) pour que Claude Desktop puisse piloter l'éditeur Unreal Engine (créer des acteurs, des Blueprints, etc.).
 
+> **Unreal 5.8 ou plus récent ?** Tu n'as pas besoin de ce script : le moteur inclut un plugin MCP officiel (expérimental).
+> Active-le dans Edit > Plugins (cherche « MCP »), redémarre l'éditeur, puis ajoute ceci dans `claude_desktop_config.json` (il faut [Node.js](https://nodejs.org)) :
+>
+> ```json
+> { "mcpServers": { "unreal": { "command": "npx", "args": ["-y", "mcp-remote", "http://127.0.0.1:8000/mcp"] } } }
+> ```
+
 ## Avant de commencer
 
 - Windows 10/11

@@ -2,11 +2,14 @@
 
 > **Comment l'utiliser**
 > 1. Ouvre PowerShell **dans le dossier de ton projet Unreal** (celui qui contient le `.uproject`), puis lance `claude`.
-> 2. Tape d'abord ces deux commandes (une par une) pour installer les skills universal-modder :
+> 2. Installe les skills universal-modder en **deux fois**. Tape la première commande, appuie sur Entrée et attends la confirmation, puis tape la deuxième :
 >    ```
 >    /plugin marketplace add rehan-remade/universal-modder
+>    ```
+>    ```
 >    /plugin install universal-modder@universal-modder
 >    ```
+>    Si Claude ouvre une fenêtre « Enter marketplace source », écris seulement `rehan-remade/universal-modder` dans le champ.
 > 3. Colle **tout le texte sous la ligne** ci-dessous dans Claude et appuie sur Entrée.
 >
 > Claude pose d'abord ses questions, puis avance phase par phase. Il demande ton accord avant d'installer un logiciel ou de toucher à un dossier de jeu.

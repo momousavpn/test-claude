@@ -1,4 +1,4 @@
-# Plan : mon GTA-like sous UE 5.8, solo d'abord, prêt pour le multi (mon département + des systèmes piochés dans d'autres jeux)
+# Plan : mon GTA-like sous UE 5.8, solo d'abord, prêt pour le multi (Seclin et le Nord + des systèmes piochés dans d'autres jeux)
 
 > **Comment l'utiliser**
 > 1. Ouvre PowerShell **dans le dossier de ton projet Unreal** (celui qui contient le `.uproject`), puis lance `claude`.
@@ -23,7 +23,7 @@ Tu travailles sur mon jeu : un **GTA-like** sous Unreal Engine 5.8. Il est **sol
 
 Je veux trois choses :
 1. **Une fondation solo propre et « prête pour le multi ».** On ne met en place ni réseau, ni serveur, ni sessions, mais aucun choix d'architecture ne doit empêcher le multijoueur plus tard.
-2. **Mon département français reproduit** à partir de données publiques (relief, routes, bâtiments, végétation).
+2. **Ma ville reproduite à partir de données publiques** (relief, routes, bâtiments, végétation). On commence par **Seclin** (Nord, 59, code INSEE 59560). Plus tard, on étendra aux communes voisines, puis au département du Nord.
 3. **Un catalogue de systèmes modulaires.** Je dois pouvoir dire « je veux tel système de tel jeu » à tout moment, et l'avoir dans mon jeu sans casser le reste. Pour commencer : la police et la conduite de GTA V, le bac à sable de Garry's Mod, les systèmes RP de FiveM.
 
 Utilise les skills du plugin universal-modder quand elles s'appliquent : `mod-any-game` et ses fiches moteur dans `references/engines/`, `game-recon`, `reverse-engineering`, `asset-pipeline`, `mashup-mods` (Pattern 1 : porter le contenu), `fal-assets`. Si le serveur MCP Unreal est connecté (plugin MCP intégré à UE 5.8), utilise-le pour agir dans l'éditeur. Sinon, utilise le Python de l'éditeur (`UnrealEditor-Cmd.exe <projet>.uproject -run=pythonscript -script=<fichier>.py`).
@@ -44,19 +44,55 @@ Utilise les skills du plugin universal-modder quand elles s'appliquent : `mod-an
   - quand un choix risque de poser problème en multi, note-le dans `Docs\MULTI.md` au lieu de le régler maintenant.
 - **Preuves** : vérifie chaque résultat par une capture d'écran, un log ou un test automatisé, au lieu de supposer que ça a marché.
 - **Journal** : tiens `Docs\JOURNAL.md` à jour (ce qui a été fait, versions des outils, problèmes rencontrés et leurs solutions).
+- **Espace disque** : avant chaque phase, vérifie l'espace libre sur les disques (`Get-PSDrive -PSProvider FileSystem`) et compare-le au budget de la section « Espace disque » ci-dessous. S'il manque de la place, arrête-toi et propose où mettre les données (un autre disque, le dossier du cache DDC ailleurs). Ne télécharge jamais un jeu de données entier (département ou région) quand l'emprise de Seclin suffit.
 - Si une étape échoue deux fois de la même manière, arrête-toi et explique-moi le problème au lieu d'insister.
 - Parle-moi en français.
+
+## Espace disque (estimations)
+
+Ordres de grandeur, à vérifier en phase 0. « Si absent » veut dire : seulement si le logiciel n'est pas déjà installé. Prévois un **SSD NVMe** pour le projet et le cache (DDC).
+
+| Étape | Contenu | Estimation |
+|---|---|---|
+| Outils de base (si absents) | Unreal Engine 5.8 par le launcher (sans symboles de débogage) | 60 à 80 Go |
+| | Visual Studio 2022, module « Développement de jeux en C++ » | 25 à 40 Go |
+| | Blender + addons, QGIS, .NET SDK, Python, Git LFS | 4 à 6 Go |
+| Phase 1 : architecture | Projet C++ compilé (`Binaries`, `Intermediate`), cache DDC de départ | 15 à 30 Go |
+| Phase 2 : Seclin (données brutes) | LiDAR HD MNT (≈ 25 à 30 dalles de 1 km²) | 0,5 à 1 Go |
+| | BD ORTHO 20 cm limitée à l'emprise | 1 à 3 Go |
+| | BD TOPO (archive du département si pas d'extraction par emprise) | 1 à 3 Go |
+| | OpenStreetMap (Overpass sur l'emprise) | moins de 0,2 Go |
+| | Nuages de points LiDAR (`.laz`), **optionnel**, pour des bâtiments plus fidèles | 4 à 10 Go |
+| Phase 2 : Seclin (dans Unreal) | Landscape, routes, bâtiments PCG, végétation, textures | 10 à 25 Go |
+| Phase 3 : assets d'autres jeux | GTA V et Garry's Mod **non comptés** (≈ 110 Go et ≈ 5 à 10 Go s'ils ne sont pas installés) | — |
+| | Extraction (`_extraction\`) + fichiers Blender + FBX | 5 à 15 Go |
+| | Assets importés dans Unreal | 3 à 8 Go |
+| Phases 4 et 5 : systèmes | Code, Blueprints, maps de test, croissance du cache DDC | 5 à 15 Go |
+| | Une version empaquetée du jeu pour tester (optionnel) | 5 à 15 Go |
+| Git | Historique local avec Git LFS (grossit à chaque commit d'assets) | 10 à 30 Go |
+
+**Totaux pour Seclin :**
+- **Moteur et Visual Studio déjà installés** : prévoir **≈ 60 à 130 Go** libres. 150 Go sont confortables.
+- **Tout à installer** (moteur, Visual Studio, outils) : prévoir **≈ 150 à 260 Go** libres. 300 Go sont confortables.
+
+**Pour plus tard (à titre indicatif) :**
+- chaque commune voisine de taille comparable ajoute environ **10 à 30 Go** (données et contenu Unreal) ;
+- le **département du Nord entier** (≈ 5 700 km²) au même niveau de détail dépasserait **plusieurs To**. Il faudra alors un niveau de détail réduit hors des villes jouables (relief à 5 m, bâtiments simplifiés), ou Cesium pour le lointain ;
+- un moteur **compilé depuis les sources** (utile le jour où on passera au serveur dédié) demande **200 à 300 Go** de plus.
+
+**Matériel conseillé** : 32 Go de RAM au minimum (64 Go confortables pour la génération de la carte), carte graphique de 8 Go de VRAM ou plus.
 
 ## Phase 0 : questions et inventaire (ne rien installer)
 
 1. Pose-moi ces questions en une seule fois :
-   - **Quel département ?** Et par quelle zone commencer : propose une **zone pilote** de 2 à 4 km² (un centre-ville avec une route principale), pas le département entier d'un coup ;
+   - **Zone pilote dans Seclin** : propose le centre-ville (autour de la mairie et de la collégiale Saint-Piat) sur 1 à 2 km², avant d'étendre à toute la commune. Montre-moi l'emprise proposée sur une capture de carte ;
    - **C++ ou Blueprint ?** Recommande du C++ pour le cœur et les systèmes, avec des Blueprints enfants pour le réglage ;
    - quels jeux j'ai installés et où, pour piocher dedans (GTA V, Garry's Mod, ressources FiveM, autres).
 2. Trouve tout seul et liste :
    - le `.uproject`, la version exacte du moteur, s'il est compilé depuis les sources ou installé par le launcher, la présence de `Source\`, les plugins actifs ;
    - les jeux installés (`um scan`, registre Steam/Epic/Rockstar, `libraryfolders.vdf`) ;
-   - les outils présents : Visual Studio, .NET SDK, Python, Git et Git LFS, Blender (version et addons), QGIS, CodeWalker.
+   - les outils présents : Visual Studio, .NET SDK, Python, Git et Git LFS, Blender (version et addons), QGIS, CodeWalker ;
+   - l'espace libre de chaque disque, la RAM, la carte graphique et sa VRAM. Compare avec la section « Espace disque » et recommande sur quel disque mettre quoi.
 3. Écris `Docs\PLAN.md`, avec l'architecture proposée, l'ordre des étapes et la liste de ce qu'il faut installer. Puis **attends mon feu vert**.
 
 ## Phase 1 : architecture modulaire (solo, prête pour le multi)
@@ -79,9 +115,16 @@ L'objectif : chaque système venu d'un autre jeu doit être une **brique indépe
    - crée la commande **`/ajouter-systeme`** dans `.claude\skills\ajouter-systeme\SKILL.md`. Elle reprend exactement la **recette** de la phase 4 ci-dessous, pour que je puisse ajouter n'importe quel système dans une nouvelle session ;
    - crée `Docs\SYSTEMES.md` : le catalogue des systèmes ajoutés (jeu d'origine, plugin, état, comment le tester).
 
-## Phase 2 : mon département à partir de données publiques
+## Phase 2 : Seclin à partir de données publiques
 
-Les données de l'IGN sont libres (Licence Ouverte Etalab), et OpenStreetMap est sous licence ODbL. **Commence par la zone pilote.**
+Les données de l'IGN sont libres (Licence Ouverte Etalab), et OpenStreetMap est sous licence ODbL. **Commence par la zone pilote, puis toute la commune de Seclin.**
+
+0. **Emprise**
+   - récupère le contour officiel de la commune : `https://geo.api.gouv.fr/communes?code=59560&format=geojson&geometry=contour` ;
+   - calcule l'emprise en Lambert-93 (EPSG:2154) avec une **marge de 500 m** autour du contour (pour l'horizon et les routes qui sortent de la ville). Enregistre-la dans `Tools\Map\zones\seclin.geojson` ;
+   - **ne télécharge que ce qui couvre cette emprise** : des dalles (LiDAR HD, ortho) ou des requêtes par emprise (Géoplateforme WFS/WMTS, Overpass), pas les archives du département entier, sauf la BD TOPO si elle n'existe qu'au département (environ 1 à 2 Go, à me demander) ;
+   - repères à vérifier sur place : le centre-ville et la collégiale Saint-Piat, l'autoroute A1, les zones d'activités, la voie ferrée et la gare, et l'aéroport de Lille-Lesquin juste à côté (en limite de carte) ;
+   - le relief du secteur est très plat : vérifie que le Landscape reste net malgré de faibles écarts d'altitude (échelle Z adaptée).
 
 1. **Relief**
    - **RGE ALTI 1 m** ou **LiDAR HD** (MNT) de l'IGN, sur la Géoplateforme (cartes.gouv.fr / geoservices.ign.fr) ;
@@ -94,7 +137,7 @@ Les données de l'IGN sont libres (Licence Ouverte Etalab), et OpenStreetMap est
    - végétation, eau et mobilier urbain : PCG, à partir des zones BD TOPO et OSM.
 3. **Références visuelles** : la **BD ORTHO** (photos aériennes) de l'IGN, comme calque de référence et pour colorer le sol au loin.
 4. **Optionnel** : le plugin **Cesium for Unreal** (gratuit), pour l'horizon lointain ou la vérification du géoréférencement.
-5. Écris le pipeline dans des scripts relançables (`Tools\Map\*.py`). Je dois pouvoir **étendre la carte à une nouvelle zone** du département avec une seule commande.
+5. Écris le pipeline dans des scripts relançables (`Tools\Map\*.py`). Je dois pouvoir **étendre la carte à une nouvelle commune** avec une seule commande (par exemple `python Tools\Map\build.py --commune 59343` pour Lesquin), en ajoutant une zone à côté des précédentes.
 6. **Vérification** : des captures vues du ciel comparées à l'orthophoto, et le trajet d'une voiture sur une vraie rue d'un bout à l'autre.
 
 ## Phase 3 : pipeline d'assets venus d'autres jeux

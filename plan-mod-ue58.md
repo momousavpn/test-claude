@@ -1,4 +1,4 @@
-# Plan : importer la police de GTA V, du RP et le bac à sable de Garry's Mod dans mon jeu UE 5.8
+# Plan : mon GTA-like multijoueur sous UE 5.8 (mon département + des systèmes piochés dans d'autres jeux)
 
 > **Comment l'utiliser**
 > 1. Ouvre PowerShell **dans le dossier de ton projet Unreal** (celui qui contient le `.uproject`), puis lance `claude`.
@@ -9,115 +9,147 @@
 >    ```
 > 3. Colle **tout le texte sous la ligne** ci-dessous dans Claude et appuie sur Entrée.
 >
-> Claude te posera quelques questions au début, puis avancera phase par phase. Il s'arrête pour te demander ton accord avant d'installer un logiciel ou de toucher à un dossier de jeu.
+> Claude pose d'abord ses questions, puis avance phase par phase. Il demande ton accord avant d'installer un logiciel ou de toucher à un dossier de jeu.
+>
+> **Ensuite, pour ajouter n'importe quel système :** dans une nouvelle session, tape simplement
+> `/ajouter-systeme le système de recherche de la police de GTA V` ou
+> `/ajouter-systeme le physgun de Garry's Mod` ou
+> `/ajouter-systeme la construction de base de Rust`.
+> Cette commande est créée par Claude pendant la phase 1.
 
 ---
 
-Tu travailles sur mon jeu Unreal Engine 5.8, un projet **perso et privé** : rien ne sera publié ni distribué. Le dossier courant est la racine du projet (là où se trouve le `.uproject`). Je veux trois choses :
-- **A.** la police de GTA V (véhicules, policiers, système d'étoiles et de poursuite) ;
-- **B.** des systèmes de type GTA RP / FiveM (métiers, inventaire, argent, interactions) ;
-- **C.** le bac à sable de Garry's Mod (menu de spawn, physgun, toolgun, undo) et ses props.
+Tu travailles sur mon jeu : un **GTA-like multijoueur** sous Unreal Engine 5.8. C'est un projet **perso et privé**, rien ne sera publié ni distribué. Le dossier courant est la racine du projet (là où se trouve le `.uproject`).
 
-Utilise les skills du plugin universal-modder quand elles s'appliquent : `mod-any-game` (et sa fiche `references/engines/unreal.md`), `game-recon`, `reverse-engineering`, `asset-pipeline`, `mashup-mods` (Pattern 1 : porter le contenu). Si le serveur MCP Unreal est connecté (plugin MCP intégré à UE 5.8), utilise-le pour agir dans l'éditeur. Sinon, utilise le Python de l'éditeur (`UnrealEditor-Cmd.exe <projet>.uproject -run=pythonscript -script=<fichier>.py`).
+Je veux trois choses :
+1. **Une fondation multijoueur solide.** Tout le jeu est pensé pour le multijoueur dès le départ.
+2. **Mon département français reproduit** à partir de données publiques (relief, routes, bâtiments, végétation).
+3. **Un catalogue de systèmes modulaires.** Je dois pouvoir dire « je veux tel système de tel jeu » à tout moment, et l'avoir dans mon jeu sans casser le reste. Pour commencer : la police et la conduite de GTA V, le bac à sable de Garry's Mod, les systèmes RP de FiveM.
 
-## Règles
+Utilise les skills du plugin universal-modder quand elles s'appliquent : `mod-any-game` et ses fiches moteur dans `references/engines/`, `game-recon`, `reverse-engineering`, `asset-pipeline`, `mashup-mods` (Pattern 1 : porter le contenu), `fal-assets`. Si le serveur MCP Unreal est connecté (plugin MCP intégré à UE 5.8), utilise-le pour agir dans l'éditeur. Sinon, utilise le Python de l'éditeur (`UnrealEditor-Cmd.exe <projet>.uproject -run=pythonscript -script=<fichier>.py`).
 
-- **Demande-moi avant** d'installer un logiciel, d'écrire dans un dossier de jeu ou de lancer un jeu. Lire les fichiers des jeux sans les modifier est autorisé.
-- **Ne modifie jamais** les fichiers d'installation de GTA V ou de Garry's Mod. Copie ce dont tu as besoin dans `D:\` ou à côté du projet, dans un dossier `_extraction\` (demande-moi où).
-- Ne lance jamais GTA Online, et n'interagis avec aucun service en ligne des jeux.
-- Ne contourne aucun chiffrement (ressources FiveM « escrow », DRM). Si une ressource est chiffrée, passe-la et dis-le-moi.
-- Avant de toucher au projet, vérifie qu'il est sous Git. Sinon, propose `git init` et un premier commit. **Commit à la fin de chaque phase** avec un message clair.
-- Garde un journal dans `_extraction\JOURNAL.md` : ce qui a été fait, les versions des outils, les chemins, les problèmes rencontrés et leurs solutions.
+## Règles (valables pour toutes les phases)
+
+- **Demande-moi avant** d'installer un logiciel, d'écrire dans un dossier de jeu, de lancer un jeu ou de télécharger plus de 5 Go.
+- **Ne modifie jamais** les fichiers d'installation des autres jeux. Copie ce dont tu as besoin dans un dossier `_extraction\` à côté du projet. Ne lance aucun jeu en ligne et ne contourne aucun chiffrement (FiveM « escrow », DRM, anti-cheat).
+- **Git** : vérifie que le projet est sous Git, avec Git LFS pour les `.uasset`/`.umap`. Sinon, propose de le mettre en place. Fais un commit à la fin de chaque étape validée. Les fichiers extraits des jeux et les données brutes de la carte restent hors du dépôt, via le `.gitignore`.
+- **Multijoueur d'abord** : tout gameplay est **décidé côté serveur** et répliqué. Rien ne doit dépendre d'un seul joueur local. Chaque fonctionnalité est testée en PIE avec **au moins 2 clients** en mode « Play as Client », pas seulement en solo.
+- **Preuves** : vérifie chaque résultat par une capture d'écran, un log ou un test automatisé, au lieu de supposer que ça a marché.
+- **Journal** : tiens `Docs\JOURNAL.md` à jour (ce qui a été fait, versions des outils, problèmes rencontrés et leurs solutions).
 - Si une étape échoue deux fois de la même manière, arrête-toi et explique-moi le problème au lieu d'insister.
-- Vérifie chaque résultat par une preuve (une capture d'écran de l'éditeur, un log, la liste des assets créés), pas en supposant que ça a marché.
 - Parle-moi en français.
 
 ## Phase 0 : questions et inventaire (ne rien installer)
 
 1. Pose-moi ces questions en une seule fois :
-   - **C++ ou Blueprint** pour les systèmes ? (recommande C++ avec des Blueprints enfants si le projet a un dossier `Source\`) ;
-   - **solo ou multijoueur** ? (si multijoueur, tout doit être répliqué dès le départ) ;
-   - quels véhicules et quels policiers je veux en priorité (proposition par défaut : `police`, `police2`, `police3`, `policeb`, `polmav`, `s_m_y_cop_01`, `s_f_y_cop_01`) ;
-   - quels props de Garry's Mod (par défaut : un lot de `models/props_c17`, `props_junk`, `props_borealis`, `props_wasteland`) ;
-   - est-ce que j'ai des ressources FiveM à porter, et où elles sont.
+   - **Quel département ?** Et par quelle zone commencer : propose une **zone pilote** de 2 à 4 km² (un centre-ville avec une route principale), pas le département entier d'un coup ;
+   - **Serveur dédié ou listen server ?** Un serveur dédié demande un moteur **compilé depuis les sources** (GitHub Epic). Propose de commencer en listen server tout en codant comme pour un serveur dédié, puis de passer au dédié plus tard ;
+   - **Nombre de joueurs visé** par serveur (8 ? 32 ? 64+ ?). Ça change les choix de réplication ;
+   - **C++ ou Blueprint ?** Recommande du C++ pour le cœur et les systèmes, avec des Blueprints enfants pour le réglage ;
+   - quels jeux j'ai installés et où, pour piocher dedans (GTA V, Garry's Mod, ressources FiveM, autres).
 2. Trouve tout seul et liste :
-   - le `.uproject`, la version exacte du moteur, la présence de `Source\`, les plugins actifs (dont MCP) ;
-   - l'installation de GTA V et de Garry's Mod (`um scan`, registre Steam/Epic/Rockstar, `libraryfolders.vdf`) ;
-   - les outils déjà présents : Blender (version), addons Sollumz et SourceIO, CodeWalker, .NET SDK, Python, Git, Visual Studio.
-3. Écris le plan détaillé et la liste de ce qu'il faut installer dans `_extraction\PLAN.md`, puis **attends mon feu vert**.
+   - le `.uproject`, la version exacte du moteur, s'il est compilé depuis les sources ou installé par le launcher, la présence de `Source\`, les plugins actifs ;
+   - les jeux installés (`um scan`, registre Steam/Epic/Rockstar, `libraryfolders.vdf`) ;
+   - les outils présents : Visual Studio, .NET SDK, Python, Git et Git LFS, Blender (version et addons), QGIS, CodeWalker.
+3. Écris `Docs\PLAN.md`, avec l'architecture proposée, l'ordre des étapes et la liste de ce qu'il faut installer. Puis **attends mon feu vert**.
 
-## Phase 1 : outils
+## Phase 1 : architecture modulaire et fondation multijoueur
 
-Après mon accord, installe ce qui manque (winget si possible, sinon téléchargement depuis le **dépôt ou le site officiel** uniquement) :
-- **Blender** (la version la plus récente supportée par Sollumz et SourceIO) ;
-- **Sollumz** (addon Blender pour les formats GTA V : `.ydr`, `.yft`, `.ydd`, `.ytd`), depuis github.com/Skylumz/Sollumz ;
-- **SourceIO** (addon Blender qui lit directement les `.mdl`, `.vtf` et `.vpk` de Source), depuis github.com/REDxEYE/SourceIO ;
-- **CodeWalker** (lecture des archives `.rpf` de GTA V), depuis github.com/dexyfex/CodeWalker ;
-- le **.NET SDK** si l'étape d'extraction automatique (phase 2) en a besoin.
+L'objectif : chaque système venu d'un autre jeu doit être une **brique indépendante**, qu'on peut ajouter, activer ou retirer.
 
-Active les addons dans Blender en ligne de commande et vérifie qu'ils se chargent (`blender -b --python-expr ...`). Lis les opérateurs réellement exposés par les versions installées (`dir(bpy.ops.sollumz)`, `dir(bpy.ops.sourceio)`) au lieu de deviner leurs noms.
+1. **Structure du code**
+   - un module C++ `Core` (le jeu de base : `GameMode`, `GameState`, `PlayerState`, `PlayerController`, `Character`) ;
+   - un **plugin Game Feature par système**, dans `Plugins\GameFeatures\<NomDuSysteme>\` (par exemple `WantedLevel`, `SandboxTools`, `RPJobs`). Chaque plugin s'active et se désactive tout seul ;
+   - les briques communes dans le Core : **Gameplay Ability System (GAS)** pour les actions, armes et effets répliqués, **Gameplay Tags**, **Enhanced Input**, un composant d'**interaction** (touche E) et un **inventaire répliqué** de base.
+2. **Fondation réseau**
+   - gameplay décidé côté serveur, appels RPC limités et validés ;
+   - réplication avec **Iris** si elle est stable dans 5.8 (vérifie dans la doc et dans les plugins de ton moteur), sinon la réplication classique avec `ReplicationGraph` ou les réglages de pertinence ;
+   - **World Partition** avec le streaming réseau des cellules ;
+   - sessions : d'abord en local (LAN ou commande `open`), puis **Epic Online Services** si je le demande.
+3. **Tests**
+   - une map `/Game/Maps/Test_Multi`, 2 à 4 clients en PIE ;
+   - un test automatisé (Automation ou Functional Test) qui vérifie que les déplacements, l'entrée dans un véhicule et une capacité GAS sont bien répliqués.
+4. **Mémoire du projet pour les prochaines sessions**
+   - crée ou complète un `CLAUDE.md` à la racine : architecture, conventions (noms, dossiers, règles réseau), comment compiler, tester et lancer en multi ;
+   - crée la commande **`/ajouter-systeme`** dans `.claude\skills\ajouter-systeme\SKILL.md`. Elle reprend exactement la **recette** de la phase 4 ci-dessous, pour que je puisse ajouter n'importe quel système dans une nouvelle session ;
+   - crée `Docs\SYSTEMES.md` : le catalogue des systèmes ajoutés (jeu d'origine, plugin, état, comment le tester).
 
-## Phase 2 : extraction des assets
+## Phase 2 : mon département à partir de données publiques
 
-### GTA V (police)
-1. **Essaie d'abord l'automatique** : écris un petit outil en C# basé sur la bibliothèque `CodeWalker.Core` (du dépôt CodeWalker), qui ouvre les `.rpf` en lecture seule, retrouve les fichiers par nom (`police3.yft`, `police3.ytd`, `s_m_y_cop_01.ydd`, `.yft`, `.ytd`, etc.) et les exporte au format XML Sollumz, avec les textures en DDS, dans `_extraction\gta\`. Il a besoin de la clé GTA lue depuis l'exe du jeu installé, comme le fait CodeWalker.
-2. **Si ça bloque**, donne-moi la marche à suivre manuelle dans CodeWalker (RPF Explorer, chemins exacts, clic droit, « Export XML »). Je le fais, puis tu reprends.
+Les données de l'IGN sont libres (Licence Ouverte Etalab), et OpenStreetMap est sous licence ODbL. **Commence par la zone pilote.**
 
-### Garry's Mod (props)
-- **Workshop** : extrais les `.gma` voulus avec `gmad.exe extract` (fourni dans `GarrysMod\bin\`) vers `_extraction\gmod\`.
-- **Props de base** : SourceIO lit les `.vpk` directement. Pas besoin de les décompresser.
+1. **Relief**
+   - **RGE ALTI 1 m** ou **LiDAR HD** (MNT) de l'IGN, sur la Géoplateforme (cartes.gouv.fr / geoservices.ign.fr) ;
+   - avec **QGIS** ou GDAL : découpe, reprojection (Lambert-93), puis export en **heightmap PNG 16 bits** aux tailles qu'accepte le Landscape d'Unreal ;
+   - import en **Landscape** avec World Partition. Note l'échelle Z exacte dans le journal.
+2. **Routes, bâtiments, eau, végétation**
+   - **BD TOPO** de l'IGN (bâtiments avec leur hauteur, routes avec leur largeur et leur importance, cours d'eau, zones de végétation), complétée par **OpenStreetMap** (noms de rues, type de commerce, nombre d'étages) via Overpass ou Geofabrik ;
+   - routes : des splines (Landscape Splines ou PCG), avec les intersections et un **graphe routier** réutilisable par l'IA de conduite et la police ;
+   - bâtiments : génération **PCG** à partir de l'emprise et de la hauteur. D'abord des volumes simples et propres, avec des styles par type (habitation, commerce, industriel) ;
+   - végétation, eau et mobilier urbain : PCG, à partir des zones BD TOPO et OSM.
+3. **Références visuelles** : la **BD ORTHO** (photos aériennes) de l'IGN, comme calque de référence et pour colorer le sol au loin.
+4. **Optionnel** : le plugin **Cesium for Unreal** (gratuit), pour l'horizon lointain ou la vérification du géoréférencement.
+5. Écris le pipeline dans des scripts relançables (`Tools\Map\*.py`). Je dois pouvoir **étendre la carte à une nouvelle zone** du département avec une seule commande.
+6. **Vérification** : des captures vues du ciel comparées à l'orthophoto, et le trajet d'une voiture sur une vraie rue d'un bout à l'autre.
 
-### FiveM (si j'en ai)
-- Les dossiers `stream\` (`.yft`, `.ydr`, `.ytd`) suivent la même chaîne que GTA V.
-- Les scripts (`client.lua`, `server.lua`, `fxmanifest.lua`) : lis-les et fais-en une **fiche de logique** dans `_extraction\fivem\NOTES.md` (événements, données, règles). On ne les exécute pas : ils servent de cahier des charges pour la phase 5.
+## Phase 3 : pipeline d'assets venus d'autres jeux
 
-## Phase 3 : conversion Blender → FBX (en lot, sans interface)
+Chaîne générale : extraction (lecture seule) dans `_extraction\<jeu>\`, puis conversion Blender en lot, puis FBX, puis import dans Unreal.
 
-Écris `_extraction\convert.py` et lance-le avec `blender -b --python`. Pour chaque asset :
-- import (Sollumz pour GTA, SourceIO pour Source) ;
-- échelle et axes pour Unreal : 1 unité = 1 cm. Le modèle doit avoir la bonne taille et regarder vers l'avant (+X) ;
-- **véhicules** : garde le châssis et les quatre roues comme os séparés et nomme-les clairement (`wheel_lf`, `wheel_rf`, `wheel_lr`, `wheel_rr`) pour Chaos Vehicles. Garde les gyrophares et les phares comme matériaux séparés ;
-- **policiers** : un mesh avec son squelette, sans les LOD inutiles ;
-- **props** : un Static Mesh par fichier, avec une collision simple (convexe) nommée `UCX_<nom>` ;
-- textures en PNG ou TGA à côté du FBX ;
-- export FBX dans `_extraction\fbx\<catégorie>\<nom>.fbx`.
+- **Outils par moteur** (installés seulement quand un système en a besoin, et après mon accord) :
+  - GTA V / FiveM (`.yft`, `.ydr`, `.ydd`, `.ytd`) : **CodeWalker** (ou un outil C# basé sur `CodeWalker.Core` pour automatiser), puis **Sollumz** dans Blender ;
+  - Source / Garry's Mod (`.mdl`, `.vtf`, `.vpk`, `.gma`) : `gmad.exe extract`, puis **SourceIO** dans Blender ;
+  - Unreal : **FModel** ; Unity : **AssetRipper** ;
+  - autres moteurs : voir la skill `reverse-engineering` et la fiche du moteur concerné.
+- Lis les opérateurs réellement exposés par les addons installés (`dir(bpy.ops.<addon>)`) au lieu de deviner leurs noms.
+- **Conversion** (`Tools\Assets\convert.py`, lancé avec `blender -b`) :
+  - échelle en cm, avant du modèle sur +X ;
+  - véhicules : roues comme os séparés (`wheel_lf`, `wheel_rf`, `wheel_lr`, `wheel_rr`), matériaux émissifs séparés pour les feux ;
+  - personnages : squelette conservé, puis **IK Retargeter** vers Manny dans UE ;
+  - props : collision convexe nommée `UCX_<nom>`.
+- **Import** (`Tools\Assets\import.py`) dans `/Game/Imported/<Jeu>/<Catégorie>/`, avec des Material Instances basées sur des matériaux maîtres communs.
+- Faute d'asset extractible, propose une alternative : génération avec fal (`fal-assets`) ou asset libre sur Fab.
 
-Produis un rapport (nombre de fichiers, nombre de polygones, ceux qui ont échoué et pourquoi). Fais un rendu de contrôle en PNG de 3 assets de chaque catégorie pour vérifier que les textures sont bonnes.
+## Phase 4 : recette pour ajouter un système de n'importe quel jeu
 
-## Phase 4 : import dans Unreal
+C'est la recette que `/ajouter-systeme` doit suivre. Quand je dis « je veux le système X du jeu Y » :
 
-Avec le MCP Unreal ou un script Python d'éditeur (`unreal.AssetImportTask`), importe dans `/Game/Imported/GTA/Vehicles`, `/Game/Imported/GTA/Peds` et `/Game/Imported/GMod/Props` :
-- **matériaux** : un Material Master par type (opaque, verre, émissif pour les gyrophares) et des Material Instances par asset ;
-- **véhicules** : Skeletal Mesh, Physics Asset, puis une Blueprint enfant de `ChaosWheeledVehiclePawn` par véhicule, avec les roues réglées. Ajoute les gyrophares (lumières qui alternent rouge et bleu) et une sirène activable ;
-- **policiers** : Skeletal Mesh, puis un **IK Retargeter** vers le squelette Manny d'UE5, pour réutiliser les animations du projet ou du template ;
-- **props** : Static Mesh avec simulation physique et masse cohérente.
+1. **Comprendre.** Recherche comment le système fonctionne dans le jeu Y :
+   - ses règles, ses chiffres (vitesses, délais, dégâts) et ses cas particuliers ;
+   - les sources : wiki, documentation de mods, et si besoin les données ou le code du jeu (skill `reverse-engineering`), si le jeu est installé ;
+   - écris une **fiche** `Docs\Systemes\<Nom>.md` : ce que voit le joueur, les règles, les données, et ce qui est répliqué (serveur ou client) ;
+   - montre-moi la fiche et attends mon accord, surtout s'il y a des choix à faire.
+2. **Concevoir.**
+   - un nouveau plugin Game Feature ;
+   - les briques du Core qu'il réutilise (GAS, interaction, inventaire) ;
+   - son modèle réseau (ce que fait le serveur, ce qui est répliqué, les RPC) ;
+   - ses points de branchement avec les autres systèmes (par exemple : un crime remonte au système de police par un événement taggé, pas par un appel direct).
+3. **Construire** une première version qui marche, puis l'enrichir. Avec les assets via la phase 3 si besoin.
+4. **Vérifier** en multijoueur (2 clients ou plus) avec une map de test dédiée, des captures et un test automatisé.
+5. **Enregistrer** : ligne dans `Docs\SYSTEMES.md`, journal, commit.
 
-Vérification : une map de test `/Game/Maps/Test_Imports` avec un exemplaire de chaque, une capture d'écran, et la conduite d'une voiture de police en PIE.
+## Phase 5 : premiers systèmes (avec la recette de la phase 4, dans cet ordre)
 
-## Phase 5 : les systèmes de jeu
-
-Construis dans cet ordre. Chaque système a sa map de test et doit être vérifié en PIE avant de passer au suivant :
-
-1. **Bac à sable façon Garry's Mod**
-   - **Menu de spawn** (UMG) : une grille générée automatiquement depuis `/Game/Imported/GMod/Props`, avec recherche. Un clic fait apparaître le prop devant le joueur.
-   - **Physgun** (`PhysicsHandleComponent`) : attraper, rapprocher et éloigner à la molette, tourner (touche maintenue), figer et défiger, avec le faisceau visuel.
-   - **Toolgun** avec des outils interchangeables : souder (`PhysicsConstraintComponent`), corde (Cable Component plus contrainte), supprimer, colorier.
-   - **Undo** (touche Z) : une pile par joueur.
-2. **Police façon GTA**
-   - **Composant de recherche** (0 à 5 étoiles) : les crimes (tirer, frapper, voler un véhicule, renverser quelqu'un) font monter le niveau seulement s'ils sont vus. Il redescend après un délai hors de vue.
-   - **Affichage** : les étoiles en HUD et le cercle de recherche sur la minimap.
-   - **Dispatch** selon le niveau : patrouilles, puis voitures en poursuite, puis barrages, puis hélico.
-   - **IA** (StateTree) : patrouille, poursuite à pied et en véhicule, tir, arrestation.
-3. **Systèmes RP** (inspirés des notes FiveM si j'en ai fourni)
-   - **Données** : inventaire (DataAssets pour les objets), argent liquide et banque, métiers (policier, mécanicien, taxi…).
-   - **Interactions** : touche E, menu radial, garages.
-   - **Sauvegarde** avec `SaveGame`, ou côté serveur en multijoueur.
-   - En multijoueur : tout répliqué, avec la logique sur le serveur.
+1. **Véhicules façon GTA** : Chaos Vehicles répliqués (entrer et sortir, places passager, dégâts, klaxon, radio), avec un véhicule importé de GTA V comme test.
+2. **Police façon GTA V** :
+   - niveau de recherche (0 à 5 étoiles) **par joueur**, géré par le serveur, qui monte seulement sur des crimes vus et redescend hors de vue ;
+   - affichage : HUD et cercle de recherche sur la minimap ;
+   - dispatch qui utilise le graphe routier de la phase 2 ;
+   - IA avec StateTree, véhicules de police importés et gyrophares.
+3. **Bac à sable façon Garry's Mod** :
+   - menu de spawn ;
+   - physgun (physique gérée par le serveur, avec prédiction et lissage côté client) ;
+   - toolgun (souder, corde, supprimer, colorier) ;
+   - undo par joueur ;
+   - **permissions** (qui peut toucher les objets de qui), indispensables en multijoueur.
+4. **RP façon FiveM** :
+   - inventaire, argent liquide et banque, métiers (policier joueur, mécanicien, taxi…), menu radial, garages ;
+   - sauvegarde côté serveur ;
+   - si j'ai des ressources FiveM en clair, lis leurs scripts pour en tirer le cahier des charges. On ne les exécute pas.
 
 ## Phase 6 : bilan
 
-- Mets à jour `_extraction\JOURNAL.md` et écris `_extraction\README.md` : comment refaire l'extraction, les commandes, et ce qui reste à faire.
-- Assure-toi que `_extraction\` et les fichiers extraits des jeux sont dans le `.gitignore` si le dépôt est poussé quelque part, même en privé.
+- Mets à jour `CLAUDE.md`, `Docs\SYSTEMES.md` et `Docs\JOURNAL.md`.
 - Fais le commit final et donne-moi un résumé court : ce qui marche (avec des captures), ce qui ne marche pas, et les prochaines étapes que tu proposes.
 
 Commence par la phase 0.
